@@ -1,0 +1,17 @@
+requests
+pandas
+jsonlines
+rapidfuzz
+tqdm
+networkx
+python-louvain
+matplotlib
+numpy
+torch
+transformers
+datasets
+scikit-learn
+seaborn
+streamlit
+plotly
+pyvis
