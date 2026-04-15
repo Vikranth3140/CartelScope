@@ -14,7 +14,7 @@ import logging
 
 # Set up logging
 logging.basicConfig(
-    level=logging.DEBUG,  # Change to DEBUG to see more information
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler("citegraphlens.log"),
@@ -23,492 +23,316 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def fetch_openalex(domain, max_results=5000, email="user@example.com", year=None):
+def reconstruct_abstract(inverted_index):
     """
-    Query the OpenAlex API for papers in a specific domain
+    Reconstructs the abstract from OpenAlex's inverted index format into a raw text string.
+    Note: The output will lack punctuation, which is expected and acceptable for LLM zero-shot classification.
+    """
+    if not inverted_index:
+        return ""
     
-    Parameters:
-    -----------
-    domain : str
-        Academic domain to query (e.g., 'Computer Science', 'Biology', 'Medicine')
-    max_results : int
-        Maximum number of results to fetch
-    email : str
-        Email to include in API requests for better rate limits
-    
-    Returns:
-    --------
-    list
-        List of paper records from OpenAlex API
+    try:
+        # Find the maximum index to size our array
+        max_idx = max([max(positions) for positions in inverted_index.values()])
+        words = [""] * (max_idx + 1)
+        
+        # Place each word at its specified indices
+        for word, positions in inverted_index.items():
+            for pos in positions:
+                words[pos] = word
+                
+        return " ".join(words).strip()
+    except Exception as e:
+        logger.warning(f"Failed to reconstruct abstract: {e}")
+        return ""
+
+def fetch_openalex(concept_id, max_results=100000, email="user@example.com", start_year=2018, end_year=2022):
+    """
+    Query the OpenAlex API for papers in a specific concept (e.g., Artificial Intelligence)
+    within a strict time window to ensure network density.
     """
     base_url = "https://api.openalex.org/works"
     
-    # Map domains to OpenAlex concept IDs
-    domain_ids = {
-        'Computer Science': 'C41008148',  # Computer Science concept ID
-        'Biology': 'C86803240',          # Biology concept ID
-        'Medicine': 'C71924100'          # Medicine concept ID
-    }
-    
-    if domain not in domain_ids:
-        raise ValueError(f"Domain must be one of {list(domain_ids.keys())}")
-    
-    # Prepare query parameters
-    # Build publication year filter. If year is provided, fetch that year only.
-    year_filter = ''
-    if year is not None:
-        year_filter = f",publication_year:{int(year)}"
-    else:
-        # Keep previous default behavior (all years before 2023)
-        year_filter = ",publication_year:<2023"
+    # Enforce time window for density
+    year_filter = f",publication_year:{start_year}-{end_year}"
 
     params = {
-        'filter': f"concepts.id:{domain_ids[domain]}{year_filter}",
-        'per_page': 200,  # Maximum allowed by the API
-        'select': "id,doi,title,publication_year,authorships,referenced_works",
-        'sort': "publication_date:desc",
-        'mailto': email  # Use polite pool by including email
+        'filter': f"concepts.id:{concept_id}{year_filter}",
+        'per_page': 200,
+        # CRITICAL UPDATE: Added abstract_inverted_index to the select parameter
+        'select': "id,doi,title,publication_year,authorships,referenced_works,abstract_inverted_index",
+        'sort': "cited_by_count:desc", # Sort by highly cited to anchor the core of the graph
+        'mailto': email
     }
     
     headers = {'User-Agent': f'CiteGraphLens/1.0 ({email})'}
-    
     all_papers = []
-    
-    # Add cursor parameter to enable cursor-based pagination
     params['cursor'] = '*'
     
-    with tqdm(total=max_results, desc=f"Fetching {domain} papers") as pbar:
+    with tqdm(total=max_results, desc="Fetching AI papers") as pbar:
         while len(all_papers) < max_results:
             try:
                 response = requests.get(base_url, params=params, headers=headers)
                 response.raise_for_status()
                 data = response.json()
                 
-                # Extract papers from response
                 papers = data.get('results', [])
                 if not papers:
-                    logger.warning(f"No papers returned in response, breaking pagination loop")
+                    logger.warning("No papers returned in response, breaking pagination loop")
                     break
                 
-                # Get response metadata
                 meta = data.get('meta', {})
-                count = meta.get('count', 0)
-                per_page = meta.get('per_page', 0)
                 next_cursor = meta.get('next_cursor')
                 
-                logger.debug(f"API response: count={count}, per_page={per_page}, papers={len(papers)}, next_cursor={next_cursor}")
-                
-                # Add papers to our collection
                 all_papers.extend(papers)
                 pbar.update(len(papers))
                 
-                # Respect API rate limits - stay well under 10 requests/second
-                time.sleep(0.3)  # Delay to avoid rate limiting (approximately 3.33 requests per second)
+                time.sleep(0.3) # Respect API rate limits
                 
-                # Check if we need to continue pagination
                 if len(all_papers) >= max_results or not next_cursor:
-                    logger.debug(f"Stopping pagination: collected={len(all_papers)}, max_results={max_results}, has_next_cursor={bool(next_cursor)}")
                     break
                 
-                # Update the cursor for the next request
                 params['cursor'] = next_cursor
                     
             except requests.exceptions.HTTPError as e:
-                # Handle rate limit errors specifically
                 if e.response.status_code == 429:
                     retry_after = int(e.response.headers.get('Retry-After', 60))
-                    logger.warning(f"Rate limit hit. Waiting for {retry_after} seconds before retrying.")
+                    logger.warning(f"Rate limit hit. Waiting for {retry_after} seconds.")
                     time.sleep(retry_after)
                     continue
                 else:
                     logger.error(f"HTTP error: {e}")
-                    time.sleep(2)  # Wait before retrying
+                    time.sleep(2)
                     continue
             except requests.exceptions.RequestException as e:
                 logger.error(f"API request failed: {e}")
-                time.sleep(2)  # Wait before retrying
+                time.sleep(2)
                 continue
     
-    logger.info(f"Successfully collected {len(all_papers)} papers from {domain}")
-    return all_papers
+    logger.info(f"Successfully collected {len(all_papers)} papers.")
+    # Trim to exactly max_results if we overshot due to pagination chunks
+    return all_papers[:max_results]
 
 
 def fetch_openalex_by_ids(work_ids, email="user@example.com", batch_size=50):
-    """
-    Fetch OpenAlex works by a list of work IDs (e.g., 'W12345').
-
-    Parameters:
-    -----------
-    work_ids : list
-        List of OpenAlex work IDs (without the https://openalex.org/ prefix)
-    email : str
-        Email to include in API requests
-    batch_size : int
-        Number of IDs to request per API call (OpenAlex supports filtering by comma-separated ids)
-
-    Returns:
-    --------
-    list
-        List of work records fetched from OpenAlex
-    """
+    """Fetch OpenAlex works by a list of work IDs to flesh out referenced targets."""
     base_url = "https://api.openalex.org/works"
     headers = {'User-Agent': f'CiteGraphLens/1.0 ({email})'}
-
     fetched = []
-    # OpenAlex allows filtering by ids:W1,W2,...; keep batches reasonable to avoid URL length issues
-    for i in range(0, len(work_ids), batch_size):
+    
+    for i in tqdm(range(0, len(work_ids), batch_size), desc="Fetching references"):
         batch = work_ids[i:i+batch_size]
         ids_filter = ','.join([f"https://openalex.org/{w}" if not w.startswith('https://') else w for w in batch])
         params = {
             'filter': f"id:{ids_filter}",
             'per_page': 200,
             'mailto': email,
-            'select': "id,doi,title,publication_year,authorships,referenced_works"
+            'select': "id,doi,title,publication_year,authorships,referenced_works,abstract_inverted_index"
         }
 
         try:
             resp = requests.get(base_url, params=params, headers=headers)
             resp.raise_for_status()
             data = resp.json()
-            results = data.get('results', [])
-            fetched.extend(results)
+            fetched.extend(data.get('results', []))
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429:
-                retry_after = int(e.response.headers.get('Retry-After', 60))
-                logger.warning(f"Rate limit hit when fetching by ids. Waiting {retry_after}s")
-                time.sleep(retry_after)
-                # retry this batch once
-                try:
-                    resp = requests.get(base_url, params=params, headers=headers)
-                    resp.raise_for_status()
-                    data = resp.json()
-                    results = data.get('results', [])
-                    fetched.extend(results)
-                except Exception:
-                    logger.error(f"Failed to fetch batch starting at index {i}")
-                    continue
-            else:
-                logger.error(f"HTTP error fetching ids batch: {e}")
-                continue
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Request failed when fetching ids batch: {e}")
+                time.sleep(int(e.response.headers.get('Retry-After', 60)))
             continue
-
-        # polite pause
+        except requests.exceptions.RequestException:
+            continue
         time.sleep(0.3)
 
     return fetched
 
-def clean_metadata(raw_data, domain_papers=None):
-    """
-    Process and clean the raw data from OpenAlex
-    
-    Parameters:
-    -----------
-    raw_data : list
-        List of paper records from OpenAlex API
-    domain_papers : dict, optional
-        Dictionary mapping paper IDs to their domains
-    
-    Returns:
-    --------
-    tuple
-        (edges_df, metadata_df) - Dataframes for citation edges and paper metadata
-    """
+def clean_metadata(raw_data):
+    """Process raw data, rebuild abstracts, and enforce closed-world graph."""
     papers = []
-    edges = []
+    logger.info("Processing and cleaning paper metadata...")
     
-    logger.info("Processing and cleaning paper data...")
-    
-    for paper in tqdm(raw_data, desc="Processing papers"):
+    # 1. First pass: Build the metadata and establish the closed world
+    for paper in tqdm(raw_data, desc="Building nodes"):
         paper_id = paper.get('id', '').replace('https://openalex.org/W', 'W')
-        
-        # Skip if no paper ID
         if not paper_id:
             continue
+            
+        # Reconstruct abstract for LLM processing
+        raw_abstract = reconstruct_abstract(paper.get('abstract_inverted_index', {}))
         
-        # Extract basic metadata
         metadata = {
             'paper_id': paper_id,
             'title': paper.get('title', ''),
             'year': paper.get('publication_year'),
             'doi': paper.get('doi', ''),
-            'domain': domain_papers.get(paper_id, '') if domain_papers else ''
+            'abstract': raw_abstract
         }
         
-        # Process author information
         authorships = paper.get('authorships', [])
-        
-        # Use the first author's institution if available
         if authorships:
             first_author = authorships[0]
             institutions = first_author.get('institutions', [])
-            
             if institutions:
-                institution = institutions[0]
-                metadata['institution'] = institution.get('display_name', '')
-                metadata['country'] = institution.get('country_code', '')
+                metadata['institution'] = institutions[0].get('display_name', '')
+                metadata['country'] = institutions[0].get('country_code', '')
             else:
-                metadata['institution'] = ''
-                metadata['country'] = ''
+                metadata['institution'] = metadata['country'] = ''
         else:
-            metadata['institution'] = ''
-            metadata['country'] = ''
-        
-        # Add to papers list
+            metadata['institution'] = metadata['country'] = ''
+            
         papers.append(metadata)
-        
-        # Process citation edges
-        references = paper.get('referenced_works', [])
-        for ref in references:
-            if ref:
-                target_id = ref.replace('https://openalex.org/W', 'W')
-                edges.append({
-                    'source': paper_id,
-                    'target': target_id
-                })
     
-    # Create DataFrames
     metadata_df = pd.DataFrame(papers)
-    edges_df = pd.DataFrame(edges)
-    
-    # Clean institution names using rapidfuzz
     metadata_df = normalize_institutions(metadata_df)
     
+    # 2. Establish the Closed World constraint
+    valid_paper_ids = set(metadata_df['paper_id'].tolist())
+    logger.info(f"Closed world established with {len(valid_paper_ids)} unique nodes.")
+    
+    # 3. Second pass: Build edges ONLY if target is inside the closed world
+    valid_edges = []
+    for paper in tqdm(raw_data, desc="Building closed-world edges"):
+        source_id = paper.get('id', '').replace('https://openalex.org/W', 'W')
+        
+        if source_id not in valid_paper_ids:
+            continue
+            
+        for ref in paper.get('referenced_works', []):
+            if ref:
+                target_id = ref.replace('https://openalex.org/W', 'W')
+                # CRITICAL: Only add edge if the target paper is actually in our dataset
+                if target_id in valid_paper_ids:
+                    valid_edges.append({
+                        'source': source_id,
+                        'target': target_id
+                    })
+                    
+    edges_df = pd.DataFrame(valid_edges)
     return edges_df, metadata_df
 
 def normalize_institutions(df):
-    """
-    Normalize institution names using rapidfuzz
-    
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        DataFrame with institution column
-    
-    Returns:
-    --------
-    pandas.DataFrame
-        DataFrame with normalized institution names
-    """
-    # Only process rows with non-empty institution names
+    """Normalize institution names using rapidfuzz"""
     institutions = df.loc[df['institution'] != '', 'institution'].unique()
-    
     if len(institutions) <= 1:
         return df
     
-    # Create a mapping of similar institution names
     norm_map = {}
     processed = set()
-    
     logger.info(f"Normalizing {len(institutions)} unique institution names...")
     
     for inst in tqdm(institutions, desc="Normalizing institutions"):
         if inst in processed:
             continue
-            
-        # Find similar institution names
-        similar = process.extract(
-            inst, 
-            [i for i in institutions if i not in processed], 
-            scorer=fuzz.token_sort_ratio, 
-            limit=10
-        )
+        similar = process.extract(inst, [i for i in institutions if i not in processed], scorer=fuzz.token_sort_ratio, limit=10)
         
-        # Group institutions with similarity score > 90
-        matches = []
-        for result in similar:
-            # Each result is (match, score, index) or just (match, score)
-            if len(result) >= 2 and result[1] > 90:
-                matches.append(result[0])
-        
+        matches = [res[0] for res in similar if len(res) >= 2 and res[1] > 90]
         if matches:
-            # Use the most common or first as canonical form
             canonical = inst
             for match in matches:
                 norm_map[match] = canonical
                 processed.add(match)
-    
-    # Apply normalization
+                
     df['institution'] = df['institution'].map(lambda x: norm_map.get(x, x))
-    
-    logger.info(f"Reduced to {len(df['institution'].unique())} unique institutions after normalization")
     return df
 
 def save_outputs(edges_df, metadata_df, output_dir='data'):
-    """
-    Save processed data to output files
-    
-    Parameters:
-    -----------
-    edges_df : pandas.DataFrame
-        DataFrame with citation edges
-    metadata_df : pandas.DataFrame
-        DataFrame with paper metadata
-    output_dir : str, optional
-        Directory to save output files (default: 'data')
-    
-    Returns:
-    --------
-    tuple
-        (paper_count, citation_count) - Counts of papers and citations
-    """
-    # Ensure output directory exists
+    """Save processed data to output files"""
     os.makedirs(output_dir, exist_ok=True)
-
     edges_path = os.path.join(output_dir, 'edges.csv')
     meta_path = os.path.join(output_dir, 'metadata.csv')
 
-    # Merge with existing edges if present
     if os.path.exists(edges_path):
         try:
-            existing_edges = pd.read_csv(edges_path)
-            edges_df = pd.concat([existing_edges, edges_df], ignore_index=True)
-            if not edges_df.empty:
-                edges_df = edges_df.drop_duplicates(subset=['source', 'target']).reset_index(drop=True)
+            edges_df = pd.concat([pd.read_csv(edges_path), edges_df], ignore_index=True)
+            edges_df = edges_df.drop_duplicates(subset=['source', 'target']).reset_index(drop=True)
         except Exception as e:
-            logger.warning(f"Could not merge existing edges.csv: {e}")
+            logger.warning(f"Could not merge edges: {e}")
 
-    # Merge with existing metadata if present
     if os.path.exists(meta_path):
         try:
-            existing_meta = pd.read_csv(meta_path)
-            metadata_df = pd.concat([existing_meta, metadata_df], ignore_index=True)
-            if not metadata_df.empty:
-                metadata_df = metadata_df.drop_duplicates(subset=['paper_id']).reset_index(drop=True)
+            metadata_df = pd.concat([pd.read_csv(meta_path), metadata_df], ignore_index=True)
+            metadata_df = metadata_df.drop_duplicates(subset=['paper_id']).reset_index(drop=True)
         except Exception as e:
-            logger.warning(f"Could not merge existing metadata.csv: {e}")
+            logger.warning(f"Could not merge metadata: {e}")
 
-    # Save processed data as CSV (merged)
     edges_df.to_csv(edges_path, index=False)
     metadata_df.to_csv(meta_path, index=False)
-
-    logger.info(f"Saved {len(metadata_df)} papers and {len(edges_df)} citations (merged with existing files if present)")
+    
     return len(metadata_df), len(edges_df)
 
 def main():
-    """Main function to run the data collection and processing pipeline"""
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description='CiteGraphLens: Citation Network Analysis')
-    parser.add_argument('--cs-papers', type=int, default=5000,
-                        help='Number of Computer Science papers to fetch (default: 5000)')
-    parser.add_argument('--bio-papers', type=int, default=5000,
-                        help='Number of Biology papers to fetch (default: 5000)')
-    parser.add_argument('--med-papers', type=int, default=5000,
-                        help='Number of Medicine papers to fetch (default: 5000)')
-    parser.add_argument('--email', type=str, default="user@example.com",
-                        help='Email to include in API requests')
-    parser.add_argument('--output-dir', type=str, default="data",
-                        help='Directory to save output files (default: data)')
-    parser.add_argument('--include-references', action='store_true',
-                        help='Also fetch metadata for referenced works and include them in the dataset')
-    parser.add_argument('--max-refs-per-paper', type=int, default=200,
-                        help='Max number of referenced works to consider per paper when include-references is set (default: 200)')
-    parser.add_argument('--max-total-refs', type=int, default=10000,
-                        help='Global cap on number of referenced works to fetch (default: 10000)')
-    parser.add_argument('--year', type=int, default=None,
-                        help='Publication year to filter papers by (e.g., 2020). If omitted, previous default (<2023) is used')
+    # Default is now 100,000 papers 
+    parser.add_argument('--papers', type=int, default=100000, help='Number of papers to fetch (default: 100000)')
+    parser.add_argument('--concept-id', type=str, default="C154945302", help='OpenAlex Concept ID (default: Artificial Intelligence)')
+    parser.add_argument('--start-year', type=int, default=2018, help='Start year for citation window')
+    parser.add_argument('--end-year', type=int, default=2022, help='End year for citation window')
+    parser.add_argument('--email', type=str, default="user@example.com", help='Email for polite API pool')
+    parser.add_argument('--output-dir', type=str, default="data", help='Directory to save output files')
+    parser.add_argument('--include-references', action='store_true', help='Also fetch metadata for referenced works')
+    parser.add_argument('--max-total-refs', type=int, default=50000, help='Global cap on referenced works to fetch (default: 50000)')
     
     args = parser.parse_args()
     
-    all_papers = []
-    domain_papers = {}  # Track which papers belong to which domain
+    logger.info(f"Initializing fetch for {args.papers} papers in concept {args.concept_id} ({args.start_year}-{args.end_year})")
     
-    # Fetch papers from all domains
-    domain_counts = {
-        'Computer Science': args.cs_papers,
-        'Biology': args.bio_papers,
-        'Medicine': args.med_papers
-    }
-    
-    for domain, count in domain_counts.items():
-        papers = fetch_openalex(domain, max_results=count, email=args.email, year=args.year)
-        
-        # Track domain for each paper
-        for paper in papers:
-            paper_id = paper.get('id', '').replace('https://openalex.org/W', 'W')
-            domain_papers[paper_id] = domain
-        
-        all_papers.extend(papers)
+    # 1. Fetch core papers
+    all_papers = fetch_openalex(
+        concept_id=args.concept_id, 
+        max_results=args.papers, 
+        email=args.email, 
+        start_year=args.start_year, 
+        end_year=args.end_year
+    )
 
-    # Optionally fetch referenced works' metadata to enrich the dataset
+    # 2. Optionally fetch references to bulk out the graph
     if args.include_references:
-        logger.info("Collecting referenced work IDs from fetched papers...")
+        logger.info("Collecting referenced work IDs...")
         all_targets = []
         for paper in all_papers:
             refs = paper.get('referenced_works', []) or []
-            # Limit per paper to avoid exploding the request size
-            if args.max_refs_per_paper and len(refs) > args.max_refs_per_paper:
-                refs = refs[:args.max_refs_per_paper]
+            all_targets.extend([r.replace('https://openalex.org/', '') for r in refs if r])
 
-            # Normalize ids (strip prefix)
-            normalized = [r.replace('https://openalex.org/', '') for r in refs if r]
-            all_targets.extend(normalized)
-
-        # Deduplicate and enforce a global cap
-        unique_targets = list(dict.fromkeys(all_targets))  # preserves order
+        unique_targets = list(dict.fromkeys(all_targets))
         if args.max_total_refs and len(unique_targets) > args.max_total_refs:
             unique_targets = unique_targets[:args.max_total_refs]
 
-        logger.info(f"Fetching metadata for {len(unique_targets)} referenced works (capped)")
+        logger.info(f"Fetching metadata for {len(unique_targets)} referenced works...")
         if unique_targets:
             ref_records = fetch_openalex_by_ids(unique_targets, email=args.email, batch_size=50)
-
-            # Append fetched reference records to all_papers if not already present
+            
             existing_ids = {p.get('id', '').replace('https://openalex.org/W', 'W') for p in all_papers}
-            new_count = 0
             for rec in ref_records:
                 rid = rec.get('id', '').replace('https://openalex.org/W', 'W')
                 if rid and rid not in existing_ids:
-                    # Mark domain as empty for referenced works (they're not in the original seed domains)
                     all_papers.append(rec)
-                    domain_papers[rid] = ''
                     existing_ids.add(rid)
-                    new_count += 1
 
-            logger.info(f"Appended {new_count} referenced works to dataset")
-    
-    # Ensure output directory exists
     os.makedirs(args.output_dir, exist_ok=True)
     
-    # Save raw data for later reference
-    # Append raw JSONL entries only for papers not already present in existing metadata
+    # Save raw JSONL backup
     meta_path = f'{args.output_dir}/metadata.csv'
     existing_ids = set()
     if os.path.exists(meta_path):
         try:
-            existing_meta = pd.read_csv(meta_path)
-            existing_ids = set(existing_meta['paper_id'].astype(str).tolist())
+            existing_ids = set(pd.read_csv(meta_path)['paper_id'].astype(str).tolist())
         except Exception:
-            existing_ids = set()
+            pass
 
-    to_write_raw = []
-    for p in all_papers:
-        pid = p.get('id', '').replace('https://openalex.org/W', 'W')
-        if pid not in existing_ids:
-            to_write_raw.append(p)
-
+    to_write_raw = [p for p in all_papers if p.get('id', '').replace('https://openalex.org/W', 'W') not in existing_ids]
     if to_write_raw:
         with jsonlines.open(f'{args.output_dir}/openalex_raw.jsonl', mode='a') as writer:
             writer.write_all(to_write_raw)
     
-    # Clean and process the data
-    edges_df, metadata_df = clean_metadata(all_papers, domain_papers)
+    # 3. Clean metadata, reconstruct abstracts, and enforce closed-world edges
+    edges_df, metadata_df = clean_metadata(all_papers)
     
-    # Save outputs to CSV files
+    # 4. Export
     paper_count, citation_count = save_outputs(edges_df, metadata_df, output_dir=args.output_dir)
     
-    # Print summary
-    domain_counts_actual = metadata_df['domain'].value_counts().to_dict()
-    cs_papers = domain_counts_actual.get('Computer Science', 0)
-    bio_papers = domain_counts_actual.get('Biology', 0)
-    med_papers = domain_counts_actual.get('Medicine', 0)
-    
-    print(f"\n✅ Collected {paper_count} papers:")
-    print(f"   - Computer Science: {cs_papers} papers (requested: {domain_counts['Computer Science']})")
-    print(f"   - Biology: {bio_papers} papers (requested: {domain_counts['Biology']})")
-    print(f"   - Medicine: {med_papers} papers (requested: {domain_counts['Medicine']})")
-    print(f"✅ Found {citation_count} citations between these papers")
+    print(f"\n✅ Graph Construction Complete:")
+    print(f"   - Total Nodes (Papers): {paper_count}")
+    print(f"   - Total Edges (Internal Citations): {citation_count}")
+    print(f"   - Time Window: {args.start_year} - {args.end_year}")
     print(f"✅ Data saved to {args.output_dir}/ directory")
 
 if __name__ == "__main__":
