@@ -1,0 +1,296 @@
+{
+  "num_nodes": 490248,
+  "num_edges": 462199,
+  "density": 1.9230838742435504e-06,
+  "num_self_loops": 0,
+  "num_isolates": 212421,
+  "fraction_isolates": 0.43329294561120085,
+  "avg_in_degree": 0.9427861000962778,
+  "avg_out_degree": 0.9427861000962778,
+  "avg_total_degree": 1.8855722001925557,
+  "median_in_degree": 0.0,
+  "median_out_degree": 0.0,
+  "median_total_degree": 1.0,
+  "max_in_degree": 1377,
+  "max_in_degree_node": 2161969291,
+  "min_in_degree": 0,
+  "min_in_degree_node": 1388,
+  "max_out_degree": 96,
+  "max_out_degree_node": 2620342231,
+  "min_out_degree": 0,
+  "min_out_degree_node": 1388,
+  "max_total_degree": 1379,
+  "max_total_degree_node": 2161969291,
+  "min_total_degree": 0,
+  "min_total_degree_node": 1388,
+  "num_weakly_connected_components": 224347,
+  "num_strongly_connected_components": 489348,
+  "largest_weak_component_size": 248598,
+  "largest_strong_component_size": 8,
+  "largest_weak_component_fraction": 0.5070862094286973,
+  "largest_strong_component_fraction": 1.6318271568675447e-05,
+  "avg_clustering_undirected_giant_weak": 0.0935915330082249,
+  "approx_diameter_undirected_giant_weak": 30,
+  "avg_shortest_path_sampled_pairs_undirected_giant_weak": 8.032476005438498,
+  "reciprocity": 0.003751630791066186,
+  "degree_assortativity": -0.0029345787255124576,
+  "top_nodes": {
+    "top_in_degree": [
+      {
+        "node": 2161969291,
+        "degree": 1377
+      },
+      {
+        "node": 2194775991,
+        "degree": 1020
+      },
+      {
+        "node": 2108598243,
+        "degree": 820
+      },
+      {
+        "node": 2164598857,
+        "degree": 787
+      },
+      {
+        "node": 2169528473,
+        "degree": 747
+      },
+      {
+        "node": 2147152072,
+        "degree": 615
+      },
+      {
+        "node": 1667165204,
+        "degree": 574
+      },
+      {
+        "node": 2106335692,
+        "degree": 537
+      },
+      {
+        "node": 2099574482,
+        "degree": 499
+      },
+      {
+        "node": 1565746575,
+        "degree": 486
+      },
+      {
+        "node": 2102258543,
+        "degree": 470
+      },
+      {
+        "node": 2148606196,
+        "degree": 456
+      },
+      {
+        "node": 1491178396,
+        "degree": 444
+      },
+      {
+        "node": 2154010459,
+        "degree": 443
+      },
+      {
+        "node": 2142183404,
+        "degree": 439
+      },
+      {
+        "node": 2133564696,
+        "degree": 436
+      },
+      {
+        "node": 2150134853,
+        "degree": 433
+      },
+      {
+        "node": 2170102584,
+        "degree": 410
+      },
+      {
+        "node": 2005314985,
+        "degree": 401
+      },
+      {
+        "node": 2143516773,
+        "degree": 394
+      }
+    ],
+    "top_out_degree": [
+      {
+        "node": 2620342231,
+        "degree": 96
+      },
+      {
+        "node": 2614167197,
+        "degree": 73
+      },
+      {
+        "node": 2139317044,
+        "degree": 59
+      },
+      {
+        "node": 2119081965,
+        "degree": 46
+      },
+      {
+        "node": 2171620180,
+        "degree": 42
+      },
+      {
+        "node": 1950706092,
+        "degree": 41
+      },
+      {
+        "node": 2336121529,
+        "degree": 40
+      },
+      {
+        "node": 2284351912,
+        "degree": 37
+      },
+      {
+        "node": 2040340473,
+        "degree": 36
+      },
+      {
+        "node": 2343875716,
+        "degree": 35
+      },
+      {
+        "node": 2055523316,
+        "degree": 34
+      },
+      {
+        "node": 2138861612,
+        "degree": 34
+      },
+      {
+        "node": 2981731882,
+        "degree": 34
+      },
+      {
+        "node": 2096178490,
+        "degree": 33
+      },
+      {
+        "node": 2592929672,
+        "degree": 33
+      },
+      {
+        "node": 2744079410,
+        "degree": 32
+      },
+      {
+        "node": 2973419442,
+        "degree": 31
+      },
+      {
+        "node": 2562055462,
+        "degree": 31
+      },
+      {
+        "node": 1982564000,
+        "degree": 30
+      },
+      {
+        "node": 2008732654,
+        "degree": 30
+      }
+    ],
+    "top_total_degree": [
+      {
+        "node": 2161969291,
+        "degree": 1379
+      },
+      {
+        "node": 2194775991,
+        "degree": 1023
+      },
+      {
+        "node": 2108598243,
+        "degree": 821
+      },
+      {
+        "node": 2164598857,
+        "degree": 787
+      },
+      {
+        "node": 2169528473,
+        "degree": 747
+      },
+      {
+        "node": 2147152072,
+        "degree": 615
+      },
+      {
+        "node": 1667165204,
+        "degree": 574
+      },
+      {
+        "node": 2106335692,
+        "degree": 537
+      },
+      {
+        "node": 2099574482,
+        "degree": 502
+      },
+      {
+        "node": 1565746575,
+        "degree": 488
+      },
+      {
+        "node": 2102258543,
+        "degree": 471
+      },
+      {
+        "node": 2148606196,
+        "degree": 458
+      },
+      {
+        "node": 2154010459,
+        "degree": 446
+      },
+      {
+        "node": 1491178396,
+        "degree": 444
+      },
+      {
+        "node": 2142183404,
+        "degree": 439
+      },
+      {
+        "node": 2133564696,
+        "degree": 438
+      },
+      {
+        "node": 2150134853,
+        "degree": 434
+      },
+      {
+        "node": 2170102584,
+        "degree": 411
+      },
+      {
+        "node": 2005314985,
+        "degree": 401
+      },
+      {
+        "node": 2143516773,
+        "degree": 395
+      }
+    ]
+  },
+  "scale_free_analysis": {
+    "powerlaw_package_available": true,
+    "note": "On a sampled induced subgraph, this is only approximate.",
+    "status": "Fit completed with powerlaw.",
+    "alpha": 2.7024563440675577,
+    "xmin": 18.0,
+    "R_powerlaw_vs_lognormal": -0.05619064159281262,
+    "p_powerlaw_vs_lognormal": 0.8376377770710401,
+    "R_powerlaw_vs_exponential": 890.8477058884006,
+    "p_powerlaw_vs_exponential": 1.801044323637504e-21
+  }
+}

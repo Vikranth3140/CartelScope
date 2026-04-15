@@ -1,2 +1,8 @@
 kagglehub
 kagglehub[pandas-datasets]
+ijson
+powerlaw
+networkx
+matplotlib
+numpy
+tqdm
