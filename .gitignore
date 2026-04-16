@@ -8,8 +8,6 @@ dataset/dblp.v12.json
 sample_10pct.json
 sample_snowball_500k.json
 data/teacher_labels_checkpoint.json
-data/weighted_citation_graph.gpickle
-data/unweighted_citation_graph.gpickle
 
 # Model checkpoints
 scibert_citation_intent/
