@@ -500,11 +500,18 @@ def verify_and_report(records):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def save_dataset(records, output_path: Path):
-    """Serialize the final curated dataset to JSON."""
+    """Serialize the final curated dataset to JSON incrementally."""
     print(f"  Saving {len(records):,} papers → {output_path} …")
     t0 = time.time()
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(records, f, default=float)
+        f.write("[\n")
+        for i, record in enumerate(tqdm(records, desc="  Writing", unit=" papers")):
+            json.dump(record, f, default=float)
+            if i < len(records) - 1:
+                f.write(",\n")
+            else:
+                f.write("\n")
+        f.write("]\n")
     elapsed = time.time() - t0
     size_gb = output_path.stat().st_size / (1 << 30)
     print(f"  Done in {elapsed:.0f}s  ({size_gb:.2f} GB)")
