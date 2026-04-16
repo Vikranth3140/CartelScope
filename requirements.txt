@@ -6,3 +6,12 @@ networkx
 matplotlib
 numpy
 tqdm
+pandas
+scikit-learn
+torch
+transformers
+datasets
+google-generativeai
+python-louvain
+ipykernel
+safetensors

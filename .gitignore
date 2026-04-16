@@ -1,4 +1,30 @@
-.venv
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Data files (too large for git)
 dataset/dblp.v12.json
 sample_10pct.json
 sample_snowball_500k.json
+data/teacher_labels_checkpoint.json
+data/weighted_citation_graph.gpickle
+data/unweighted_citation_graph.gpickle
+
+# Model checkpoints
+scibert_citation_intent/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
