@@ -1,0 +1,116 @@
+╔════════════════════════════════════════════════════════════╗
+║  Citation Network — Phase 1                              ║
+║  Topological Snowball Sampling for Dense Scale-Free Graph ║
+╚════════════════════════════════════════════════════════════╝
+  Input:   dataset\dblp.v12.json
+  Output:  sample_snowball_500k.json
+  Target:  ~500,000 papers
+  Seeds:   200 most-cited papers
+  Oversample: 105%
+
+──────────────────────────────────────────────────────────────
+  PASS 1 │ Building graph index from full DBLP v12 dataset
+──────────────────────────────────────────────────────────────
+  Indexing: 4894081 papers [07:38, 10677.34 papers/s]
+
+  Indexed 4,894,081 papers in 458s (7.6 min)
+  Raw edges in file:       45,564,149
+  Papers with references:  3,777,107
+  Papers with citation ct: 3,538,030
+
+  Building reverse adjacency (cited → citers) ...
+  Rev-index: 100%|██████████████████████████████████████████████████████| 3777107/3777107 [00:47<00:00, 78939.55 src/s]
+  Reverse index built in 48s
+  Valid internal edges: 45,564,149
+  Papers cited by ≥1 other paper: 3,087,508
+
+  Selecting top-200 most-cited papers as BFS seeds …
+  Top-10 seeds:
+    [  1] paper 2041404167  —  48,327 citations
+    [  2] paper 1639032689  —  44,175 citations
+    [  3] paper 2912565176  —  42,437 citations
+    [  4] paper 2151103935  —  35,541 citations
+    [  5] paper 2911964244  —  34,741 citations
+    [  6] paper 1973948212  —  32,053 citations
+    [  7] paper 2153635508  —  31,047 citations
+    [  8] paper 2156909104  —  28,886 citations
+    [  9] paper 1791587663  —  25,855 citations
+    [ 10] paper 2119821739  —  22,276 citations
+    …
+    [200] paper 2147993766  —  6,515 citations
+
+  BFS oversample target: 525,000  (+5% headroom for cleanup)
+
+──────────────────────────────────────────────────────────────
+  SNOWBALL BFS │ target 525,000 papers, 200 seeds
+──────────────────────────────────────────────────────────────
+  Seeded with 200 papers
+    Level  1:  +  524,800 papers │ total   525,000 │ queue   524,800 │    0.5s
+  BFS progress: 100%|████████████████████████████████████████████████| 525000/525000 [00:00<00:00, 1039784.00 papers/s]
+
+  BFS complete: 525,000 papers in 1 levels, 1s (0.0 min)
+
+──────────────────────────────────────────────────────────────
+  PASS 2 │ Extracting 525,000 paper records
+──────────────────────────────────────────────────────────────
+  Extracting: 4894081 papers [08:19, 9797.63 papers/s]
+
+  Extracted 525,000 full records in 500s (8.3 min)
+
+  Removing isolates …
+    iter 1: −0 isolates → 525,000 papers
+  Net removed: 0
+
+  Trimming 525,000 → 500,000 papers (removing least-connected frontier nodes) …
+
+  Removing isolates …
+    iter 1: −0 isolates → 500,000 papers
+  Net removed: 0
+  Final count after trim + clean: 500,000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DATASET VERIFICATION REPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  SIZE & DENSITY
+  ──────────────
+    Papers  (nodes):      500,000
+    Citations (edges):  4,871,544
+    Edge / node ratio:       9.74
+    Network density:         1.95e-05
+
+  DEGREE STATISTICS
+  ─────────────────
+    OUT-DEGREE  (references made)
+      mean     9.74   median     7   max    426
+    IN-DEGREE   (citations received)
+      mean     9.74   median     1   max  22734
+
+  NODE CONNECTIVITY
+  ─────────────────
+    Both in & out edges:   310,675  ( 62.1%)
+    Sink  (in only):           430  (  0.1%)
+    Source (out only):     188,895  ( 37.8%)
+    Isolate (none):              0  (  0.0%)
+
+  SCALE-FREE PREVIEW  (decade bins, papers with degree ≥ 1)
+  ─────────────────
+    IN  [     1–     9]   239,422  ██████████████████████████████
+    IN  [    10–    99]    65,578  ████████
+    IN  [   100–   999]     5,776  █
+    IN  [ 1,000– 9,999]       312  █
+    IN  [10,000–22,734]        17  █
+    OUT [     1–     9]   315,828  █████████████████████████
+    OUT [    10–    99]   183,522  ██████████████
+    OUT [   100–   426]       220  █
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Saving 500,000 papers → sample_snowball_500k.json …
+  Writing: 100%|████████████████████████████████████████████████████████| 500000/500000 [08:07<00:00, 1025.91 papers/s]
+  Done in 487s  (1.57 GB)
+
+  Total pipeline: 1708s (28.5 min)
+
+  ✓ PASS  │  500,000 papers, 4,871,544 edges, edge/node=9.7, isolates=0, 62.1% bidirectional
+
+  Dataset ready for Phase 2: Topological Profiling & Baselines
