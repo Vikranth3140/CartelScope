@@ -3,21 +3,11 @@
   <p align="center">
     <em>A multi-modal pipeline for detecting organized citation fraud<br/>using Network Science, Large Language Models, and Graph Theory</em>
   </p>
-  <p align="center">
-    <a href="#-overview">Overview</a> •
-    <a href="#-key-findings-at-a-glance">Findings</a> •
-    <a href="#-the-pipeline">Pipeline</a> •
-    <a href="#-figure-gallery">Gallery</a> •
-    <a href="#-deep-dives">Deep Dives</a> •
-    <a href="#-getting-started">Setup</a> •
-    <a href="#-project-structure">Structure</a> •
-    <a href="#-authors">Authors</a>
-  </p>
 </p>
 
 ---
 
-## 📌 Overview
+## Overview
 
 **Citation cartels** — covert groups of researchers who systematically inflate each other's h-indexes through superficial, reciprocal, or ceremonial citations — are one of the most insidious threats to scientific integrity. They distort rankings, misdirect funding, and erode trust in the academic enterprise.
 
@@ -29,7 +19,7 @@ This project constructs a **complete, end-to-end detection pipeline** applied to
 4. **Cartel Detection** — Louvain community detection + a 6-metric Composite Cartel Index flags anomalous communities
 5. **Resilience Surgery** — Targeted attack simulations and a novel cartel edge excision experiment prove cartels are non-load-bearing
 
-### 🎯 The Core Research Question
+### The Core Research Question
 
 > *Can we detect citation cartels purely from the topological signatures they leave in the citation graph — and what happens to the network when we surgically remove them?*
 
@@ -37,7 +27,7 @@ This project constructs a **complete, end-to-end detection pipeline** applied to
 
 ---
 
-## 📊 Key Findings at a Glance
+## Key Findings at a Glance
 
 ### Network Properties
 
@@ -81,7 +71,7 @@ This project constructs a **complete, end-to-end detection pipeline** applied to
 
 ---
 
-## 🧬 The Pipeline
+## The Pipeline
 
 ```
  ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -128,7 +118,7 @@ This project constructs a **complete, end-to-end detection pipeline** applied to
 
 ---
 
-## 🖼️ Figure Gallery
+## Figure Gallery
 
 The pipeline generates **22 publication-ready figures** across two output directories. Below is a categorized index:
 
@@ -175,7 +165,7 @@ The pipeline generates **22 publication-ready figures** across two output direct
 
 ---
 
-## 🔬 Deep Dives
+## Deep Dives
 
 ### Why Snowball Sampling? The Density Problem
 
@@ -234,7 +224,7 @@ Communities exceeding Z > 2 are flagged. Community 10 scored the highest with an
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -278,7 +268,7 @@ python deliverable_4.py
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 NS-Project/
@@ -336,18 +326,6 @@ NS-Project/
 ```
 
 ---
-
-## 👥 Authors
-
-<table>
-  <tr>
-    <td align="center"><strong>Pratyush Gupta</strong><br/>(2022375)</td>
-    <td align="center"><strong>Syam Sai Santosh Bandi</strong><br/>(2022528)</td>
-    <td align="center"><strong>Vikranth Udandarao</strong><br/>(2022570)</td>
-  </tr>
-</table>
-
-*Network Science Course Project*
 
 ## License
 
