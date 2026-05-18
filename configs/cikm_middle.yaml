@@ -1,0 +1,60 @@
+project:
+  name: citation-cartel-cikm-2026
+  seed: 42
+
+azure:
+  hard_cap_usd: 1000
+  expected_total_project_spend_usd: [100, 500]
+  require_explicit_execute_flag: true
+  teacher_model: gpt-4.1-mini
+  teacher_batch_estimate:
+    input_tokens_per_edge: 1500
+    output_tokens_per_edge: 30
+    batch_input_usd_per_1m_tokens: 0.20
+    batch_output_usd_per_1m_tokens: 0.80
+
+paths:
+  raw_dataset: data/raw/sample_snowball_500k.json
+  interim_dir: data/interim
+  processed_dir: data/processed
+  labels_dir: data/labels
+  audit_dir: data/audit
+  manifest_dir: artifacts/manifests
+  output_dir: graph_analysis_outputs
+
+dataset:
+  expected_nodes: 500000
+  expected_edges: 4871544
+  expected_edge_node_ratio: 9.74
+
+annotation:
+  target_teacher_labels: 100000
+  minimum_teacher_labels: 30000
+  pilot_teacher_labels: 2000
+  active_learning_labels: 5000
+  labels:
+    - Background
+    - Method
+    - Result/Comparison
+    - Support
+    - Contrast/Criticism
+    - Perfunctory/Ceremonial
+  weights:
+    Background: 0.2
+    Method: 1.0
+    Result/Comparison: 0.7
+    Support: 0.5
+    Contrast/Criticism: 0.3
+    Perfunctory/Ceremonial: 0.1
+
+student_model:
+  base_model: allenai/scibert_scivocab_uncased
+  max_length: 256
+  train_split: 0.8
+  validation_split: 0.1
+  test_split: 0.1
+  epochs: 4
+
+graph:
+  top_k_excision_communities: 5
+  stability_seeds: [11, 23, 37, 42, 101]

@@ -7,11 +7,16 @@ matplotlib
 numpy
 tqdm
 pandas
+pyarrow
 scikit-learn
 torch
 transformers
+accelerate
 datasets
 google-generativeai
+openai
 python-louvain
 ipykernel
 safetensors
+PyYAML
+python-dotenv

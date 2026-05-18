@@ -3,14 +3,35 @@
 venv/
 env/
 
+# Local secrets
+.env
+.env.*
+!.env.example
+
 # Data files (too large for git)
 dataset/dblp.v12.json
 sample_10pct.json
 sample_snowball_500k.json
+data/raw/
+data/interim/
+data/processed/
 data/teacher_labels_checkpoint.json
+data/labels/
+data/audit/
 
 # Model checkpoints
 scibert_citation_intent/
+models/
+
+# Large/generated analysis artifacts
+artifacts/*.tar.gz
+graph_analysis_outputs/trust_pagerank_shifts.csv
+graph_analysis_outputs/seed_stability/trust_pagerank_shifts.csv
+graph_analysis_outputs/seed_stability/**/node_communities.parquet
+graph_analysis_outputs/seed_stability/**/community_scores.parquet
+graph_analysis_outputs/.*.png.*
+reports/**/*.log
+reports/**/*.jsonl
 
 # Python
 __pycache__/
