@@ -1,0 +1,20 @@
+{
+  "created_at": "2026-05-18T15:11:39.623906+00:00",
+  "edges_path": "data/interim/edges.parquet",
+  "semantic_edges_path": "data/processed/semantic_edges_combined.parquet",
+  "weighted_edges_path": "data/processed/weighted_edges.parquet",
+  "papers_path": "data/interim/paper_metadata.parquet",
+  "communities_path": "data/interim/pre_annotation_node_communities.parquet",
+  "output_dir": "graph_analysis_outputs",
+  "full_edge_rows": 4871544,
+  "typed_edge_rows": 2043874,
+  "community_count": 20,
+  "top_k_excision_communities": 5,
+  "stability_seeds": [
+    11,
+    23,
+    37,
+    42,
+    101
+  ]
+}

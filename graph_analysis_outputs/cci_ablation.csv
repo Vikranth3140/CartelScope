@@ -1,0 +1,7 @@
+removed_feature,spearman_with_full_cci,top5_overlap_with_full_cci,top10_overlap_with_full_cci,top25_overlap_with_full_cci
+density,0.9984962406015038,0.8,1.0,1.0
+log_inflation,0.9037593984962405,0.8,0.8,1.0
+reciprocity,0.8842105263157894,0.8,0.9,1.0
+semantic_superficiality,0.875187969924812,0.8,0.7,1.0
+degree_assortativity,0.9774436090225563,1.0,0.9,1.0
+mean_pagerank_drop,0.8857142857142858,0.6,0.9,1.0

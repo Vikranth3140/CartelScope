@@ -1,0 +1,19 @@
+{
+  "top_k_communities": 5,
+  "top_community_ids": [
+    0,
+    5,
+    13,
+    14,
+    15
+  ],
+  "target_internal_edge_count": 404625,
+  "random_control_seeds": [
+    11,
+    23,
+    37,
+    42,
+    101
+  ],
+  "sample_path_nodes": 32
+}
