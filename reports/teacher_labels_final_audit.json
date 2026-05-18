@@ -1,0 +1,30 @@
+{
+  "labels_path": "data/labels/teacher_labels_final.parquet",
+  "rows": 205897,
+  "label_counts": {
+    "Background": 121827,
+    "Method": 70886,
+    "Result/Comparison": 7939,
+    "Support": 2325,
+    "Contrast/Criticism": 391,
+    "Perfunctory/Ceremonial": 2529
+  },
+  "label_shares": {
+    "Background": 0.5917,
+    "Method": 0.3443,
+    "Result/Comparison": 0.0386,
+    "Support": 0.0113,
+    "Contrast/Criticism": 0.0019,
+    "Perfunctory/Ceremonial": 0.0123
+  },
+  "confidence": {
+    "mean": 0.8856860469069487,
+    "median": 0.9,
+    "min": 0.7,
+    "max": 1.0
+  },
+  "missing_labels": [],
+  "underpowered_labels": [],
+  "ready_for_student_training": true,
+  "minimum_recommended_count_per_label": 20
+}
