@@ -1,0 +1,17 @@
+{
+  "created_at": "2026-05-18T15:29:12.497298+00:00",
+  "edges_path": "data/interim/edges.parquet",
+  "semantic_edges_path": "data/processed/semantic_edges_combined.parquet",
+  "weighted_edges_path": "data/processed/weighted_edges_stability.parquet",
+  "papers_path": "data/interim/paper_metadata.parquet",
+  "output_dir": "graph_analysis_outputs/seed_stability",
+  "seeds": [
+    11,
+    23,
+    37,
+    42,
+    101
+  ],
+  "reference_seed": 42,
+  "typed_edge_rows": 2043874
+}
